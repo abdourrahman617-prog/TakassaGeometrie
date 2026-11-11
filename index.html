@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GéoCalc - Géométrie 2D et 3D</title>
+
+<style>
+:root {
+  --blue: #2563eb;
+  --dark: #172554;
+  --bg: #f1f5f9;
+}
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: #1e293b;
+}
+
+header {
+  background: linear-gradient(120deg,#172554,#2563eb);
+  color: white;
+  text-align: center;
+  padding: 30px 15px;
+}
+
+header h1 { margin: 0 0 10px; font-size: 32px; }
+header p { margin: 0; }
+
+nav {
+  background: white;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 15px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px #0001;
+}
+
+nav button {
+  border: 0;
+  padding: 12px 25px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+nav button.active {
+  background: var(--blue);
+  color: white;
+}
+
+main {
+  max-width: 1100px;
+  margin: 25px auto;
+  padding: 0 15px;
+}
+
+.panel {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px #0000000d;
+}
+
+h2 { color: var(--dark); }
+
+select, input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-top: 7px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.drawing {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 15px;
+}
+
+svg { width: 100%; max-width: 360px; height: 260px; }
+
+.result {
+  background: #eff6ff;
+  padding: 18px;
+  border-radius: 12px;
+  margin-top: 20px;
+  border-left: 5px solid var(--blue);
+}
+
+.result h3 { margin-top: 0; color: var(--blue); }
+
+.formula {
+  background: #f8fafc;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.calculate {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.calculate:hover { background: #1d4ed8; }
+
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #64748b;
+}
+
+@media(max-width:700px) {
+  .content { grid-template-columns: 1fr; }
+  header h1 { font-size: 25px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📐 GéoCalc</h1>
+  <p>Calculateur de géométrie : figures 2D et solides 3D</p>
+</header>
+
+<nav>
+  <button id="btn2d" class="active" onclick="setMode('2d')">Figures 2D</button>
+  <button id="btn3d" onclick="setMode('3d')">Solides 3D</button>
+</nav>
+
+<main>
+<section class="panel">
+
+<h2 id="sectionTitle">Figures géométriques 2D</h2>
+<p>Choisis une figure, entre ses dimensions et découvre ses propriétés.</p>
+
+<label for="shape">Choisir une forme géométrique :</label>
+<select id="shape" onchange="updateForm()"></select>
+
+<div class="content">
+
+<div>
+  <h3>Dimensions</h3>
+  <div id="fields"></div>
+
+  <button class="calculate" onclick="calculate()">
+    Calculer
+  </button>
+
+  <div class="result" id="result">
+    <h3>Résultats</h3>
+    Entre les dimensions puis clique sur Calculer.
+  </div>
+
+  <div class="formula" id="formula">
+    Les formules apparaîtront ici.
+  </div>
+</div>
+
+<div>
+  <h3>Représentation géométrique</h3>
+  <div class="drawing" id="drawing"></div>
+  <p style="text-align:center;color:#64748b">
+    Dessin illustratif de la forme choisie
+  </p>
+</div>
+
+</div>
+</section>
+</main>
+
+<footer>
+  GéoCalc © 2026 - Apprendre et comprendre la géométrie
+</footer>
+
+<script>
+
+let mode = "2d";
+
+const shapes = {
+  "2d": {
+    carre: {
+      name:"Carré",
+      fields:["Côté (cm)"],
+      formula:"P = 4 × côté<br>A = côté × côté",
+      draw:`<rect x="90" y="45" width="170" height="170" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><text x="175" y="30" text-anchor="middle">a</text>`
+    },
+    rectangle: {
+      name:"Rectangle",
+      fields:["Longueur (cm)","Largeur (cm)"],
+      formula:"P = 2 × (L + l)<br>A = L × l",
+      draw:`<rect x="55" y="80" width="240" height="120" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><text x="175" y="65" text-anchor="middle">L</text><text x="305" y="145">l</text>`
+    },
+    triangle: {
+      name:"Triangle",
+      fields:["Base (cm)","Hauteur (cm)","Côté A (cm)","Côté B (cm)"],
+      formula:"A = (base × hauteur) / 2<br>P = A + B + C",
+      draw:`<polygon points="175,35 45,220 305,220" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><text x="175" y="245" text-anchor="middle">Base</text><text x="190" y="125">h</text>`
+    },
+    cercle: {
+      name:"Cercle",
+      fields:["Rayon (cm)"],
+      formula:"P = 2 × π × r<br>A = π × r²",
+      draw:`<circle cx="175" cy="130" r="90" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><line x1="175" y1="130" x2="265" y2="130" stroke="#dc2626" stroke-width="3"/><text x="215" y="118">r</text>`
+    },
+    parallelogramme: {
+      name:"Parallélogramme",
+      fields:["Base (cm)","Côté (cm)","Hauteur (cm)"],
+      formula:"P = 2 × (base + côté)<br>A = base × hauteur",
+      draw:`<polygon points="110,45 300,45 240,215 50,215" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><line x1="110" y1="45" x2="110" y2="215" stroke="#dc2626" stroke-dasharray="6,4" stroke-width="2"/><text x="175" y="240" text-anchor="middle">Base</text>`
+    },
+    trapeze: {
+      name:"Trapèze",
+      fields:["Grande base (cm)","Petite base (cm)","Hauteur (cm)","Côté gauche (cm)","Côté droit (cm)"],
+      formula:"A = (B + b) × h / 2<br>P = B + b + c + d",
+      draw:`<polygon points="100,55 250,55 310,215 40,215" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/>`
+    },
+    losange: {
+      name:"Losange",
+      fields:["Côté (cm)","Grande diagonale (cm)","Petite diagonale (cm)"],
+      formula:"P = 4 × côté<br>A = (D × d) / 2",
+      draw:`<polygon points="175,25 300,130 175,235 50,130" fill="#bfdbfe" stroke="#2563eb" stroke-width="4"/><line x1="50" y1="130" x2="300" y2="130" stroke="#dc2626" stroke-dasharray="6,4"/><line x1="175" y1="25" x2="175" y2="235" stroke="#dc2626" stroke-dasharray="6,4"/>`
+    }
+  },
+
+  "3d": {
+    cube: {
+      name:"Cube",
+      fields:["Arête (cm)"],
+      formula:"V = a³<br>A totale = 6 × a²",
+      draw:`<path d="M65 85 L205 85 L205 225 L65 225 Z M65 85 L120 35 L260 35 L205 85 M205 85 L260 35 L260 175 L205 225 M260 175 L120 175 L65 225" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/>`
+    },
+    pave: {
+      name:"Pavé droit",
+      fields:["Longueur (cm)","Largeur (cm)","Hauteur (cm)"],
+      formula:"V = L × l × h<br>A totale = 2 × (L×l + L×h + l×h)",
+      draw:`<path d="M45 100 L210 100 L210 210 L45 210 Z M45 100 L105 45 L270 45 L210 100 M210 100 L270 45 L270 155 L210 210 M270 155 L105 155 L45 210" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/>`
+    },
+    cylindre: {
+      name:"Cylindre",
+      fields:["Rayon (cm)","Hauteur (cm)"],
+      formula:"V = π × r² × h<br>A totale = 2πr(r + h)",
+      draw:`<ellipse cx="175" cy="65" rx="85" ry="30" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/><path d="M90 65 V205 M260 65 V205" stroke="#2563eb" stroke-width="3" fill="none"/><path d="M90 205 A85 30 0 0 0 260 205" stroke="#2563eb" stroke-width="3" fill="none"/><path d="M90 205 A85 30 0 0 1 260 205" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,5" fill="none"/>`
+    },
+    cone: {
+      name:"Cône",
+      fields:["Rayon (cm)","Hauteur (cm)"],
+      formula:"V = π × r² × h / 3<br>A totale = πr(r + g)<br>g = √(r² + h²)",
+      draw:`<path d="M175 30 L70 205 A105 30 0 0 0 280 205 Z" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/><ellipse cx="175" cy="205" rx="105" ry="30" fill="none" stroke="#2563eb" stroke-width="3"/><line x1="175" y1="30" x2="175" y2="205" stroke="#dc2626" stroke-dasharray="5,5"/>`
+    },
+    sphere: {
+      name:"Sphère",
+      fields:["Rayon (cm)"],
+      formula:"V = 4 × π × r³ / 3<br>A = 4 × π × r²",
+      draw:`<circle cx="175" cy="130" r="95" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/><ellipse cx="175" cy="130" rx="95" ry="30" fill="none" stroke="#2563eb" stroke-width="2"/><path d="M175 35 A95 95 0 0 1 175 225" fill="none" stroke="#2563eb" stroke-width="2"/>`
+    },
+    pyramide: {
+      name:"Pyramide à base carrée",
+      fields:["Côté de la base (cm)","Hauteur (cm)"],
+      formula:"V = a² × h / 3<br>A totale = a² + 2 × a × g<br>g = √(h² + (a/2)²)",
+      draw:`<path d="M175 30 L65 205 L285 205 Z M175 30 L175 205 M65 205 L175 160 L285 205" fill="#bfdbfe" stroke="#2563eb" stroke-width="3"/><path d="M65 205 L120 240 L285 205" fill="none" stroke="#2563eb" stroke-width="3"/>`
+    }
+  }
+};
+
+function setMode(m) {
+  mode = m;
+  document.getElementById("btn2d").classList.toggle("active",m==="2d");
+  document.getElementById("btn3d").classList.toggle("active",m==="3d");
+  document.getElementById("sectionTitle").textContent =
+    m==="2d" ? "Figures géométriques 2D" : "Solides géométriques 3D";
+  updateForm();
+}
+
+function updateForm() {
+  const select = document.getElementById("shape");
+  const current = select.value;
+  select.innerHTML = "";
+
+  for (const key in shapes[mode]) {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = shapes[mode][key].name;
+    select.appendChild(opt);
+  }
+
+  if (shapes[mode][current]) select.value = current;
+
+  const s = shapes[mode][select.value];
+
+  document.getElementById("fields").innerHTML = s.fields.map((f,i) => `
+    <label>${f}</label>
+    <input type="number" id="v${i}" min="0.000001" step="any" placeholder="Entrer ${f.toLowerCase()}">
+  `).join("");
+
+  document.getElementById("formula").innerHTML =
+    "<b>Formules mathématiques :</b><br>" + s.formula;
+
+  document.getElementById("drawing").innerHTML =
+    `<svg viewBox="0 0 350 260" role="img" aria-label="${s.name}">
+      ${s.draw}
+    </svg>`;
+
+  document.getElementById("result").innerHTML =
+    "<h3>Résultats</h3>Entre les dimensions puis clique sur Calculer.";
+}
+
+function calculate() {
+  const key = document.getElementById("shape").value;
+  const inputs = shapes[mode][key].fields.map((_,i) =>
+    document.getElementById("v"+i).value.trim()
+  );
+
+  if (inputs.some(v => v === "" || !Number.isFinite(Number(v)) || Number(v) <= 0)) {
+    document.getElementById("result").innerHTML =
+      "<h3>Attention</h3>Veuillez saisir toutes les dimensions avec des nombres positifs.";
+    return;
+  }
+
+  const v = inputs.map(Number);
+  const pi = Math.PI;
+  let lines = [];
+
+  const add = (label,value,unit) => {
+    lines.push(`<p><b>${label} :</b> ${value.toFixed(2)} ${unit}</p>`);
+  };
+
+  if (mode === "2d") {
+    let A,P;
+
+    switch(key) {
+      case "carre":
+        P=4*v[0]; A=v[0]**2; break;
+
+      case "rectangle":
+        P=2*(v[0]+v[1]); A=v[0]*v[1]; break;
+
+      case "triangle":
+        if (v[2]+v[3] <= v[0] || v[2]+v[0] <= v[3] || v[3]+v[0] <= v[2]) {
+          error("Les trois côtés ne forment pas un triangle valide.");
+          return;
+        }
+        if (v[1] > v[0] || v[1] > 2*v[0]) {
+          error("Vérifiez la hauteur et la base du triangle.");
+          return;
+        }
+        P=v[0]+v[2]+v[3];
+        A=v[0]*v[1]/2;
+        break;
+
+      case "cercle":
+        P=2*pi*v[0]; A=pi*v[0]**2; break;
+
+      case "parallelogramme":
+        P=2*(v[0]+v[1]); A=v[0]*v[2]; break;
+
+      case "trapeze":
+        P=v[0]+v[1]+v[3]+v[4];
+        A=(v[0]+v[1])*v[2]/2;
+        break;
+
+      case "losange":
+        P=4*v[0]; A=v[1]*v[2]/2;
+        break;
+    }
+
+    add("Périmètre",P,"cm");
+    add("Aire",A,"cm²");
+
+  } else {
+    let V,S;
+
+    switch(key) {
+      case "cube":
+        V=v[0]**3; S=6*v[0]**2; break;
+
+      case "pave":
+        V=v[0]*v[1]*v[2];
+        S=2*(v[0]*v[1]+v[0]*v[2]+v[1]*v[2]);
+        break;
+
+      case "cylindre":
+        V=pi*v[0]**2*v[1];
+        S=2*pi*v[0]*(v[0]+v[1]);
+        break;
+
+      case "cone": {
+        const g=Math.sqrt(v[0]**2+v[1]**2);
+        V=pi*v[0]**2*v[1]/3;
+        S=pi*v[0]*(v[0]+g);
+        break;
+      }
+
+      case "sphere":
+        V=4*pi*v[0]**3/3;
+        S=4*pi*v[0]**2;
+        break;
+
+      case "pyramide": {
+        const g=Math.sqrt(v[1]**2+(v[0]/2)**2);
+        V=v[0]**2*v[1]/3;
+        S=v[0]**2+2*v[0]*g;
+        break;
+      }
+    }
+
+    add("Volume",V,"cm³");
+    add("Aire totale",S,"cm²");
+  }
+
+  document.getElementById("result").innerHTML =
+    `<h3>✓ Résultats du calcul</h3>${lines.join("")}
+     <small>Les résultats sont arrondis à deux décimales.</small>`;
+}
+
+function error(message) {
+  document.getElementById("result").innerHTML =
+    `<h3>Attention</h3>${message}`;
+}
+
+updateForm();
+
+</script>
+</body>
+</html>
